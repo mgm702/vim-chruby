@@ -1,5 +1,5 @@
-" chruby.vim - Switch Ruby versions using Chruby from inside Vim
-" Maintainer: Matt Michnal <mattm3646@gmail.com>
+" chruby.vim - Switch Ruby versions from inside Vim
+" Maintainer: Your Name <your.email@example.com>
 " Version: 1.0
 " Based on rvm.vim by Tim Pope
 
@@ -144,46 +144,51 @@ endfunction
 function! s:Chruby(bang,...) abort
   if a:0 == 0
     " If no arguments, just list available Rubies
-    let current = exists('$RUBY_ROOT') ? fnamemodify($RUBY_ROOT, ':t') : 'system'
+    let l:current = exists('$RUBY_ROOT') ? fnamemodify($RUBY_ROOT, ':t') : 'system'
 
-    let output = ["Available Rubies:"]
-    for ruby in g:chruby_rubies
-      let ruby_name = fnamemodify(ruby, ':t')
-      call add(output, (ruby_name ==# current ? ' * ' : '   ') . ruby_name)
+    echo "Available Rubies:"
+    echo ""
+    for l:ruby in g:chruby_rubies
+      let l:ruby_name = fnamemodify(l:ruby, ':t')
+      echo (l:ruby_name ==# l:current ? ' * ' : '   ') . l:ruby_name
     endfor
 
-    call add(output, current ==# 'system' ? ' * system' : '   system')
+    if l:current ==# 'system'
+      echo ' * system'
+    else
+      echo '   system'
+    endif
 
-    return 'echo "' . escape(join(output, "\n"), '"') . '"'
+    return ''
   elseif a:0 >= 1 && a:1 ==# 'use'
     " :Chruby use [version]
     if a:0 == 1
       " Use .ruby-version
-      let version = chruby#detect_ruby_version()
-      if empty(version)
+      let l:version_name = chruby#detect_ruby_version()
+      if empty(l:version_name)
         return 'echoerr "No .ruby-version file found"'
       endif
     else
-      let version = a:2
+      let l:version_name = a:2
     endif
 
-    let ruby_path = s:find_ruby(version)
-    if empty(ruby_path)
-      return 'echoerr "Ruby version not found: ' . version . '"'
+    let l:ruby_path = s:find_ruby(l:version_name)
+    if empty(l:ruby_path)
+      return 'echoerr "Ruby version not found: ' . l:version_name . '"'
     endif
 
-    let ruby_name = s:set_ruby_env(ruby_path)
-    return 'echomsg "Now using ' . ruby_name . '"'
+    let l:ruby_name = s:set_ruby_env(l:ruby_path)
+    return 'echomsg "Now using ' . l:ruby_name . '"'
   else
     " :Chruby [version]
-    let version = a:1
-    let ruby_path = s:find_ruby(version)
+    let l:version_name = a:1
+    let l:ruby_path = s:find_ruby(l:version_name)
 
-    if empty(ruby_path)
-      return 'echoerr "Ruby version not found: ' . version . '"'
+    if empty(l:ruby_path)
+      return 'echoerr "Ruby version not found: ' . l:version_name . '"'
     endif
 
-    call s:set_ruby_env(ruby_path)
+    call s:set_ruby_env(l:ruby_path)
     return ''
   endif
 endfunction
