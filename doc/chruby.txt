@@ -1,0 +1,56 @@
+*chruby.txt*  Switch Ruby versions from inside Vim
+
+Author:  Matt Michnal <mattm3646@gmail.com>
+License: Same terms as Vim itself (see |license|)
+
+This plugin is only available if 'compatible' is not set.
+
+COMMANDS                                        *:Chruby*
+
+:Chruby                  Lists all available Ruby versions, with an asterisk
+                        indicating the current version.
+
+:Chruby {version}        Set the current Ruby version to {version}.
+
+:Chruby use [version]    If [version] is provided, set the current Ruby version
+                        to [version] and echo the version chosen. If no version
+                        is provided, try to detect from .ruby-version file.
+
+CONFIGURATION                                   *chruby-configuration*
+
+g:chruby_rubies          List of paths to Ruby installations.
+                        By default includes:
+                        - /opt/rubies/*
+                        - ~/.rubies/*
+                        - ~/.rvm/rubies/*
+                        - ~/.rbenv/versions/*
+                        - ~/.rbfu/rubies/*
+
+                        You can add additional paths with:
+>
+                        let g:chruby_rubies += ['/path/to/ruby']
+<
+STATUSLINE                                      *chruby#statusline()*
+
+Add chruby#statusline() to 'statusline' (or 'titlestring') to see the current
+Ruby version in your statusline (or title bar).
+
+Example:
+>
+    set statusline+=%{chruby#statusline()}
+<
+
+AUTOMATIC SWITCHING                             *chruby-auto*
+
+To automatically switch Ruby versions when switching buffers based on
+.ruby-version files:
+>
+    autocmd BufEnter * Chruby use
+<
+
+ABOUT                                           *chruby-about*
+
+Inspired by vim-rvm (https://github.com/tpope/vim-rvm) but built for chruby
+(https://github.com/postmodern/chruby).
+
+ vim:tw=78:et:ft=help:norl:
