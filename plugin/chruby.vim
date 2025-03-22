@@ -12,26 +12,61 @@ let g:loaded_chruby = 1
 if !exists('g:chruby_rubies')
   let g:chruby_rubies = []
 
-  " Default chruby paths
-  if isdirectory('/opt/rubies')
-    let g:chruby_rubies += glob('/opt/rubies/*', 0, 1)
+  " Default chruby paths - check explicitly with expand()
+  let rubies_path = expand('~/.rubies')
+  if isdirectory(rubies_path)
+    " Get a explicit directory listing instead of using glob
+    let ruby_dirs = split(system('ls -d ' . rubies_path . '/*'), '\n')
+    let g:chruby_rubies += ruby_dirs
   endif
 
-  if isdirectory(expand('~/.rubies'))
-    let g:chruby_rubies += glob(expand('~/.rubies/*'), 0, 1)
+  if isdirectory('/opt/rubies')
+    let ruby_dirs = split(system('ls -d /opt/rubies/*'), '\n')
+    let g:chruby_rubies += ruby_dirs
   endif
 
   " Support for RVM, rbenv, rbfu paths
-  if isdirectory(expand('~/.rvm/rubies'))
-    let g:chruby_rubies += glob(expand('~/.rvm/rubies/*'), 0, 1)
+  let rvm_path = expand('~/.rvm/rubies')
+  if isdirectory(rvm_path)
+    let ruby_dirs = split(system('ls -d ' . rvm_path . '/*'), '\n')
+    let g:chruby_rubies += ruby_dirs
   endif
 
-  if isdirectory(expand('~/.rbenv/versions'))
-    let g:chruby_rubies += glob(expand('~/.rbenv/versions/*'), 0, 1)
+  let rbenv_path = expand('~/.rbenv/versions')
+  if isdirectory(rbenv_path)
+    let ruby_dirs = split(system('ls -d ' . rbenv_path . '/*'), '\n')
+    let g:chruby_rubies += ruby_dirs
   endif
 
-  if isdirectory(expand('~/.rbfu/rubies'))
-    let g:chruby_rubies += glob(expand('~/.rbfu/rubies/*'), 0, 1)
+  let rbfu_path = expand('~/.rbfu/rubies')
+  if isdirectory(rbfu_path)
+    let ruby_dirs = split(system('ls -d ' . rbfu_path . '/*'), '\n')
+    let g:chruby_rubies += ruby_dirs
+  endif
+
+  " If our detection found nothing, try running chruby command directly
+  if empty(g:chruby_rubies)
+    let chruby_output = system('chruby')
+    if v:shell_error == 0
+      " Parse the output of chruby command
+      for line in split(chruby_output, '\n')
+        let ruby_name = substitute(line, '^\s*\*\?\s*', '', '')
+        if ruby_name != '' && ruby_name != 'system'
+          " Try to find the actual path
+          let ruby_path = ''
+          for dir in ['/opt/rubies/', expand('~/.rubies/')]
+            if isdirectory(dir . ruby_name)
+              let ruby_path = dir . ruby_name
+              break
+            endif
+          endfor
+
+          if ruby_path != ''
+            call add(g:chruby_rubies, ruby_path)
+          endif
+        endif
+      endfor
+    endif
   endif
 endif
 
@@ -144,20 +179,25 @@ endfunction
 function! s:Chruby(bang,...) abort
   if a:0 == 0
     " If no arguments, just list available Rubies
-    let l:current = exists('$RUBY_ROOT') ? fnamemodify($RUBY_ROOT, ':t') : 'system'
+    let current = exists('$RUBY_ROOT') ? fnamemodify($RUBY_ROOT, ':t') : 'system'
 
     echo "Available Rubies:"
     echo ""
-    for l:ruby in g:chruby_rubies
-      let l:ruby_name = fnamemodify(l:ruby, ':t')
-      echo (l:ruby_name ==# l:current ? ' * ' : '   ') . l:ruby_name
+
+    " Debug: show what we found
+    if empty(g:chruby_rubies)
+      echo "No Ruby installations detected."
+      echo "Try setting g:chruby_rubies manually in your vimrc."
+      echo ""
+    endif
+
+    for ruby in g:chruby_rubies
+      let ruby_name = fnamemodify(ruby, ':t')
+      echo (ruby_name ==# current ? ' * ' : '   ') . ruby_name
     endfor
 
-    if l:current ==# 'system'
-      echo ' * system'
-    else
-      echo '   system'
-    endif
+    " Always show system ruby option at the end
+    echo (current ==# 'system' ? ' * ' : '   ') . 'system'
 
     return ''
   elseif a:0 >= 1 && a:1 ==# 'use'
